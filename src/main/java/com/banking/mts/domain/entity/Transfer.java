@@ -39,11 +39,14 @@ public class Transfer {
     @Column(name = "idempotency_key", nullable = false, unique = true, length = 64)
     private String idempotencyKey;
 
+    @Column(name = "request_hash", nullable = false, length = 64)
+    private String requestHash;
+
+    @Column(name = "failure_reason", length = 255)
+    private String failureReason;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
-    @Column(name = "completed_at")
-    private LocalDateTime completedAt;
 
     @PrePersist
     protected void onCreate() {
