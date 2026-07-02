@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -105,12 +106,9 @@ public class AccountService {
     }
 
     public AccountResponse createAccount(CreateAccountRequest request) {
-        if (accountRepository.existsByAccountNumber(request.getAccountNumber())) {
-            throw new RuntimeException("Account already exists: " + request.getAccountNumber());
-        }
-
+        String tempAccountNumber = "TEMP-" + UUID.randomUUID().toString().replace("-", "").substring(0, 15);
         Account account = Account.builder()
-                .accountNumber(request.getAccountNumber())
+                .accountNumber(tempAccountNumber)
                 .ownerName(request.getOwnerName())
                 .balance(new BigDecimal(request.getInitialBalance()))
                 .currency(request.getCurrency())
@@ -118,6 +116,8 @@ public class AccountService {
                 .build();
 
         Account savedAccount = accountRepository.save(account);
+        savedAccount.setAccountNumber(String.format("%010d", savedAccount.getId()));
+        accountRepository.save(savedAccount);
 
         return AccountResponse.builder()
                 .id(savedAccount.getId())

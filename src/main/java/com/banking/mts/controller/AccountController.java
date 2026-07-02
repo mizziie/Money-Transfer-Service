@@ -12,7 +12,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.bind.annotation.*;
+
+import java.net.URI;
 
 @RestController
 @RequestMapping("/api/v1/accounts")
@@ -48,7 +51,11 @@ public class AccountController {
             @Valid @RequestBody CreateAccountRequest request) {
         
         AccountResponse response = accountService.createAccount(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(response.getId())
+                .toUri();
+        return ResponseEntity.status(HttpStatus.CREATED).location(location).body(response);
     }
 
     @GetMapping("/{id}/balance")

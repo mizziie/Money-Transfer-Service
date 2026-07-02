@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -29,8 +30,8 @@ public class GlobalExceptionHandler {
         String detail = ex.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
-        ProblemDetail problem = buildProblemDetail(HttpStatus.BAD_REQUEST, detail, request);
-        return ResponseEntity.badRequest().body(problem);
+        ProblemDetail problem = buildProblemDetail(HttpStatus.UNPROCESSABLE_ENTITY, detail, request);
+        return ResponseEntity.unprocessableEntity().body(problem);
     }
 
     @ExceptionHandler(MissingRequestHeaderException.class)
@@ -39,12 +40,22 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(problem);
     }
 
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ProblemDetail> handleMalformedJson(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        ProblemDetail problem = buildProblemDetail(HttpStatus.BAD_REQUEST, "Malformed request body", request);
+        return ResponseEntity.badRequest().body(problem);
+    }
+
     private ProblemDetail buildProblemDetail(HttpStatus status, String detail, HttpServletRequest request) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
         problem.setType(URI.create("https://errors.bank.local/" + status.getReasonPhrase().toLowerCase().replace(" ", "-")));
         problem.setTitle(status.getReasonPhrase());
         problem.setInstance(URI.create(request.getRequestURI()));
-        problem.setProperty("traceId", request.getHeader(RequestIdFilter.REQUEST_ID_HEADER));
+        Object traceId = request.getAttribute(RequestIdFilter.REQUEST_ID_HEADER);
+        if (traceId == null) {
+            traceId = request.getHeader(RequestIdFilter.REQUEST_ID_HEADER);
+        }
+        problem.setProperty("traceId", traceId);
         return problem;
     }
 

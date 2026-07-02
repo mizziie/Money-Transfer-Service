@@ -23,5 +23,6 @@ public class CreateTransferRequest {
 
     @NotBlank(message = "Currency is required")
     @Size(min = 3, max = 3, message = "Currency must be exactly 3 characters")
+    @Pattern(regexp = "^[A-Z]{3}$", message = "Currency must be a valid 3-letter ISO code")
     private String currency;
 }

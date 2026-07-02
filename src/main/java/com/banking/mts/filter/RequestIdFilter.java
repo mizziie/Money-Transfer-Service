@@ -27,6 +27,7 @@ public class RequestIdFilter implements Filter {
             requestId = UUID.randomUUID().toString();
         }
 
+        httpRequest.setAttribute(REQUEST_ID_HEADER, requestId);
         httpResponse.setHeader(REQUEST_ID_HEADER, requestId);
         chain.doFilter(request, response);
     }
