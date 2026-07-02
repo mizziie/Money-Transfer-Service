@@ -1,0 +1,79 @@
+services:
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mts-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "${SA_PASSWORD:-P@ssw0rd1234}"
+      MSSQL_PID: Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    healthcheck:
+      test: [ "CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${SA_PASSWORD:-P@ssw0rd1234}", "-Q", "SELECT 1", "-C" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    container_name: mts-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ibmmq:
+    image: icr.io/ibm-messaging/mq:latest
+    container_name: mts-ibmmq
+    environment:
+      LICENSE: accept
+      MQ_QMGR_NAME: QM1
+      MQ_APP_PASSWORD: "${MQ_APP_PASSWORD:-passw0rd}"
+      MQ_ADMIN_PASSWORD: "${MQ_ADMIN_PASSWORD:-passw0rd}"
+    ports:
+      - "1414:1414"
+      - "9443:9443"
+    volumes:
+      - ibmmq-data:/mnt/mqm
+    healthcheck:
+      test: [ "CMD", "dspmq", "-m", "QM1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mts-app
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:sqlserver://sqlserver:1433;databaseName=mts_db;encrypt=true;trustServerCertificate=true"
+      SPRING_DATASOURCE_USERNAME: sa
+      SPRING_DATASOURCE_PASSWORD: "${SA_PASSWORD:-P@ssw0rd1234}"
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      IBM_MQ_CONN_NAME: "ibmmq(1414)"
+      IBM_MQ_QMGR: QM1
+      IBM_MQ_CHANNEL: DEV.APP.SVRCONN
+      IBM_MQ_PASSWORD: "${MQ_APP_PASSWORD:-passw0rd}"
+    ports:
+      - "8080:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ibmmq:
+        condition: service_healthy
+
+volumes:
+  sqlserver-data:
+  ibmmq-data:
