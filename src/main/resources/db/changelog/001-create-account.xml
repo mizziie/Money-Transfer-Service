@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+        changeSet id="001" = migration step แรก
+        author = คนสร้าง (ใส่ชื่อ/ทีมก็ได้)
+        Liquibase จะบันทึกว่า id นี้ run แล้วใน table DATABASECHANGELOG
+        ถ้า run ซ้ำ → ข้ามไป (ไม่ทำซ้ำ)
+    -->
+    <changeSet id="001" author="dev">
+        <createTable tableName="account">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="PK_account" nullable="false"/>
+            </column>
+            <column name="account_number" type="VARCHAR(20)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="UQ_account_number"/>
+            </column>
+            <column name="owner_name" type="NVARCHAR(120)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="currency" type="VARCHAR(3)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="balance" type="DECIMAL(19,4)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(10)" defaultValue="ACTIVE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="DATETIME2(3)" defaultValueComputed="SYSUTCDATETIME()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="DATETIME2(3)" defaultValueComputed="SYSUTCDATETIME()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <sql>
+            ALTER TABLE account
+                ADD CONSTRAINT CK_account_balance CHECK (balance &gt;= 0);
+            ALTER TABLE account
+                ADD CONSTRAINT CK_account_status CHECK (status IN ('ACTIVE','FROZEN','CLOSED'));
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

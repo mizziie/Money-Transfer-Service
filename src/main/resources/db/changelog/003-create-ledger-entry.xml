@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="003" author="dev">
+        <createTable tableName="ledger_entry">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="PK_ledger" nullable="false"/>
+            </column>
+            <column name="account_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="FK_ledger_account"
+                             references="account(id)"/>
+            </column>
+            <column name="transfer_id" type="BIGINT">
+                <!-- nullable=true เพราะ deposit/withdraw ไม่มี transfer_id -->
+                <constraints foreignKeyName="FK_ledger_transfer"
+                             references="transfer(id)"/>
+            </column>
+            <column name="entry_type" type="VARCHAR(6)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="amount" type="DECIMAL(19,4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="balance_after" type="DECIMAL(19,4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="DATETIME2(3)" defaultValueComputed="SYSUTCDATETIME()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <sql>
+            ALTER TABLE ledger_entry
+                ADD CONSTRAINT CK_ledger_type CHECK (entry_type IN ('DEBIT','CREDIT'));
+            ALTER TABLE ledger_entry
+                ADD CONSTRAINT CK_ledger_amount CHECK (amount &gt; 0);
+        </sql>
+
+        <!-- Index เพื่อ query statement ได้เร็ว -->
+        <createIndex indexName="IX_ledger_account" tableName="ledger_entry">
+            <column name="account_id"/>
+            <column name="created_at" descending="true"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

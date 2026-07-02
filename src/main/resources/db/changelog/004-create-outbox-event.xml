@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="004" author="dev">
+        <createTable tableName="outbox_event">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="PK_outbox" nullable="false"/>
+            </column>
+            <column name="aggregate_type" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="aggregate_id" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="event_type" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="payload" type="NVARCHAR(MAX)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(10)" defaultValue="PENDING">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="DATETIME2(3)" defaultValueComputed="SYSUTCDATETIME()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="published_at" type="DATETIME2(3)"/>
+        </createTable>
+
+        <sql>
+            ALTER TABLE outbox_event
+                ADD CONSTRAINT CK_outbox_st CHECK (status IN ('PENDING','PUBLISHED','FAILED'));
+        </sql>
+
+        <!-- Index เพื่อ scheduler poll PENDING records ได้เร็ว -->
+        <createIndex indexName="IX_outbox_status" tableName="outbox_event">
+            <column name="status"/>
+            <column name="created_at"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
