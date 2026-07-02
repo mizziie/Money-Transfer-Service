@@ -3,16 +3,14 @@ package com.banking.mts.dto;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class BalanceResponse {
+public class AccountOperationResponse {
     private Long accountId;
     private BigDecimal balance;
-    private String currency;
-    private LocalDateTime asOf;
+    private Long ledgerEntryId;
 }
