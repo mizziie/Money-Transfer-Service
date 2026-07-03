@@ -1,0 +1,556 @@
+{
+    "info": {
+        "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "name": "Money Transfer Service API",
+        "description": "Spec-compliant API collection for Money Transfer Service",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Account API",
+            "item": [
+                {
+                    "name": "Create Account",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Status code is 201', function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "});",
+                                    "",
+                                    "pm.test('Account created successfully', function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.id).to.exist;",
+                                    "    pm.expect(jsonData.accountNumber).to.exist;",
+                                    "    pm.expect(jsonData.ownerName).to.exist;",
+                                    "    pm.expect(jsonData.balance).to.exist;",
+                                    "    pm.expect(jsonData.currency).to.exist;",
+                                    "    pm.expect(jsonData.status).to.exist;",
+                                    "});",
+                                    "",
+                                    "if (pm.response.code === 201) {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.collectionVariables.set('testAccountNumber', jsonData.accountNumber);",
+                                    "    pm.collectionVariables.set('testAccountId', jsonData.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"ownerName\": \"John Doe\",\n    \"initialBalance\": \"1000.00\",\n    \"currency\": \"THB\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/accounts",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "accounts"
+                            ]
+                        },
+                        "description": "Create a new bank account"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Account (Receiver)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Status code is 201', function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "});",
+                                    "",
+                                    "if (pm.response.code === 201) {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.collectionVariables.set('receiverAccountNumber', jsonData.accountNumber);",
+                                    "    pm.collectionVariables.set('receiverAccountId', jsonData.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"ownerName\": \"Jane Smith\",\n    \"initialBalance\": \"500.00\",\n    \"currency\": \"THB\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/accounts",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "accounts"
+                            ]
+                        },
+                        "description": "Create a second account for transfer tests"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Account by ID",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Status code is 200', function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test('Account data is valid', function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.id).to.exist;",
+                                    "    pm.expect(jsonData.accountNumber).to.exist;",
+                                    "    pm.expect(jsonData.ownerName).to.exist;",
+                                    "    pm.expect(jsonData.balance).to.exist;",
+                                    "    pm.expect(jsonData.currency).to.exist;",
+                                    "    pm.expect(jsonData.status).to.exist;",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/accounts/{{testAccountId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "accounts",
+                                "{{testAccountId}}"
+                            ]
+                        },
+                        "description": "Retrieve account information by account ID"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Account Balance",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Status code is 200', function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test('Balance data is valid', function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.accountId).to.exist;",
+                                    "    pm.expect(jsonData.balance).to.exist;",
+                                    "    pm.expect(jsonData.currency).to.exist;",
+                                    "    pm.expect(jsonData.asOf).to.exist;",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/accounts/{{testAccountId}}/balance",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "accounts",
+                                "{{testAccountId}}",
+                                "balance"
+                            ]
+                        },
+                        "description": "Retrieve current balance by account ID"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Deposit",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Status code is 200', function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test('Deposit response is valid', function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.accountId).to.exist;",
+                                    "    pm.expect(jsonData.balance).to.exist;",
+                                    "    pm.expect(jsonData.ledgerEntryId).to.exist;",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"amount\": \"100.00\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/accounts/{{testAccountId}}/deposit",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "accounts",
+                                "{{testAccountId}}",
+                                "deposit"
+                            ]
+                        },
+                        "description": "Deposit money into an account"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Withdraw",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Status code is 200', function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test('Withdraw response is valid', function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.accountId).to.exist;",
+                                    "    pm.expect(jsonData.balance).to.exist;",
+                                    "    pm.expect(jsonData.ledgerEntryId).to.exist;",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"amount\": \"50.00\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/accounts/{{testAccountId}}/withdraw",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "accounts",
+                                "{{testAccountId}}",
+                                "withdraw"
+                            ]
+                        },
+                        "description": "Withdraw money from an account"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Change Account Status",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Status code is 200', function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test('Status changed successfully', function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.status).to.eql('FROZEN');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"status\": \"FROZEN\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/accounts/{{testAccountId}}/status",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "accounts",
+                                "{{testAccountId}}",
+                                "status"
+                            ]
+                        },
+                        "description": "Change account status to ACTIVE, FROZEN, or CLOSED"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Account Transactions",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Status code is 200', function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test('Statement data is valid', function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.accountId).to.exist;",
+                                    "    pm.expect(jsonData.items).to.be.an('array');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/accounts/{{testAccountId}}/transactions?page=0&size=10",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "accounts",
+                                "{{testAccountId}}",
+                                "transactions"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "0"
+                                },
+                                {
+                                    "key": "size",
+                                    "value": "10"
+                                }
+                            ]
+                        },
+                        "description": "Get account statement with ledger entries"
+                    },
+                    "response": []
+                }
+            ],
+            "description": "Account management endpoints"
+        },
+        {
+            "name": "Transfer API",
+            "item": [
+                {
+                    "name": "Create Transfer",
+                    "event": [
+                        {
+                            "listen": "prerequest",
+                            "script": {
+                                "exec": [
+                                    "pm.collectionVariables.set('idempotencyKey', pm.variables.replaceIn('{{$randomUUID}}'));"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        },
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Status code is 201 or 200', function () {",
+                                    "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                                    "});",
+                                    "",
+                                    "pm.test('Transfer response is valid', function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.transferId).to.exist;",
+                                    "    pm.expect(jsonData.fromAccountId).to.exist;",
+                                    "    pm.expect(jsonData.toAccountId).to.exist;",
+                                    "    pm.expect(jsonData.amount).to.exist;",
+                                    "    pm.expect(jsonData.status).to.exist;",
+                                    "});",
+                                    "",
+                                    "if (pm.response.code === 201) {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.collectionVariables.set('testTransferId', jsonData.transferId);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Idempotency-Key",
+                                "value": "{{idempotencyKey}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"fromAccountId\": {{testAccountId}},\n    \"toAccountId\": {{receiverAccountId}},\n    \"amount\": \"100.00\",\n    \"currency\": \"THB\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/transfers",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "transfers"
+                            ]
+                        },
+                        "description": "Create a new money transfer between account IDs"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Transfer by ID",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Status code is 200', function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test('Transfer data is valid', function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.transferId).to.exist;",
+                                    "    pm.expect(jsonData.fromAccountId).to.exist;",
+                                    "    pm.expect(jsonData.toAccountId).to.exist;",
+                                    "    pm.expect(jsonData.amount).to.exist;",
+                                    "    pm.expect(jsonData.status).to.exist;",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/transfers/{{testTransferId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "transfers",
+                                "{{testTransferId}}"
+                            ]
+                        },
+                        "description": "Retrieve transfer information by transfer ID"
+                    },
+                    "response": []
+                }
+            ],
+            "description": "Money transfer endpoints"
+        }
+    ],
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:8080",
+            "type": "string"
+        }
+    ]
+}

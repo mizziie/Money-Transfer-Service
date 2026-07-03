@@ -42,6 +42,7 @@ services:
       - "9443:9443"
     volumes:
       - ibmmq-data:/mnt/mqm
+      - ./mq-config.mqsc:/etc/mqm/mq-config.mqsc
     healthcheck:
       test: [ "CMD", "dspmq", "-m", "QM1" ]
       interval: 10s
