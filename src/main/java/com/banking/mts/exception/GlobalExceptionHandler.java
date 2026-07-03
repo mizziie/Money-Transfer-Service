@@ -42,7 +42,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ProblemDetail> handleMalformedJson(HttpMessageNotReadableException ex, HttpServletRequest request) {
-        ProblemDetail problem = buildProblemDetail(HttpStatus.BAD_REQUEST, "Malformed request body", request);
+        String detail = ex.getMessage() != null ? ex.getMessage() : "Malformed request body";
+        ProblemDetail problem = buildProblemDetail(HttpStatus.BAD_REQUEST, detail, request);
         return ResponseEntity.badRequest().body(problem);
     }
 
@@ -72,6 +73,7 @@ public class GlobalExceptionHandler {
             return HttpStatus.CONFLICT;
         }
         if (lower.contains("account already exists")) return HttpStatus.CONFLICT;
+        if (lower.contains("rate limit exceeded")) return HttpStatus.TOO_MANY_REQUESTS;
         return HttpStatus.INTERNAL_SERVER_ERROR;
     }
 }

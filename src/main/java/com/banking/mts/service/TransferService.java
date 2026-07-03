@@ -24,7 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Service
 @RequiredArgsConstructor
@@ -37,26 +37,26 @@ public class TransferService {
     private final OutboxEventRepository outboxEventRepository;
     private final DistributedLock distributedLock;
     private final AccountService accountService;
+    private final IdempotencyService idempotencyService;
     private final ObjectMapper objectMapper;
 
     public TransferResult createTransfer(CreateTransferRequest request, String idempotencyKey) {
         // Check idempotency
         String requestHash = generateRequestHash(request, idempotencyKey);
+
+        // 1. Try Redis first
+        java.util.Optional<TransferResult> cached = idempotencyService.check(idempotencyKey, requestHash);
+        if (cached.isPresent()) {
+            return cached.get();
+        }
+
+        // 2. Fallback to DB (safety net)
         java.util.Optional<Transfer> existingTransfer = transferRepository.findByIdempotencyKey(idempotencyKey);
         if (existingTransfer.isPresent()) {
             Transfer transfer = existingTransfer.get();
             if (transfer.getRequestHash().equals(requestHash)) {
-                // Idempotent replay: same key + same payload
                 return TransferResult.builder()
-                        .response(TransferResponse.builder()
-                                .transferId(transfer.getId())
-                                .status(transfer.getStatus().name())
-                                .fromAccountId(transfer.getFromAccountId())
-                                .toAccountId(transfer.getToAccountId())
-                                .amount(transfer.getAmount())
-                                .currency(transfer.getCurrency())
-                                .createdAt(transfer.getCreatedAt())
-                                .build())
+                        .response(toResponse(transfer))
                         .replay(true)
                         .build();
             }
@@ -114,7 +114,24 @@ public class TransferService {
                     .idempotencyKey(idempotencyKey)
                     .requestHash(requestHash)
                     .build();
-            Transfer savedTransfer = transferRepository.save(transfer);
+            Transfer savedTransfer;
+            try {
+                savedTransfer = transferRepository.save(transfer);
+            } catch (org.springframework.dao.DataIntegrityViolationException e) {
+                // Race condition: another request saved the same idempotency key.
+                // Fetch the existing transfer and return its response.
+                Transfer existing = transferRepository.findByIdempotencyKey(idempotencyKey)
+                        .orElseThrow(() -> new RuntimeException("Idempotency race condition: transfer not found"));
+                if (existing.getRequestHash().equals(requestHash)) {
+                    TransferResult replay = TransferResult.builder()
+                            .response(toResponse(existing))
+                            .replay(true)
+                            .build();
+                    idempotencyService.store(idempotencyKey, requestHash, replay.getResponse());
+                    return replay;
+                }
+                throw new RuntimeException("Idempotency conflict: " + idempotencyKey);
+            }
 
             // Update balances
             lockedFrom.setBalance(lockedFrom.getBalance().subtract(amount));
@@ -155,18 +172,12 @@ public class TransferService {
             accountService.invalidateAccountCache(lockedFrom.getId());
             accountService.invalidateAccountCache(lockedTo.getId());
 
-            return TransferResult.builder()
-                    .response(TransferResponse.builder()
-                            .transferId(savedTransfer.getId())
-                            .status(savedTransfer.getStatus().name())
-                            .fromAccountId(savedTransfer.getFromAccountId())
-                            .toAccountId(savedTransfer.getToAccountId())
-                            .amount(savedTransfer.getAmount())
-                            .currency(savedTransfer.getCurrency())
-                            .createdAt(savedTransfer.getCreatedAt())
-                            .build())
+            TransferResult result = TransferResult.builder()
+                    .response(toResponse(savedTransfer))
                     .replay(false)
                     .build();
+            idempotencyService.store(idempotencyKey, requestHash, result.getResponse());
+            return result;
 
         } finally {
             if (secondLock != null) {
@@ -180,6 +191,10 @@ public class TransferService {
         Transfer transfer = transferRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Transfer not found: " + id));
 
+        return toResponse(transfer);
+    }
+
+    private TransferResponse toResponse(Transfer transfer) {
         return TransferResponse.builder()
                 .transferId(transfer.getId())
                 .status(transfer.getStatus().name())
@@ -222,7 +237,7 @@ public class TransferService {
                     "toAccountId", transfer.getToAccountId(),
                     "amount", transfer.getAmount(),
                     "currency", transfer.getCurrency(),
-                    "occurredAt", LocalDateTime.now().toString()
+                    "occurredAt", Instant.now()
             ));
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to build outbox event payload", e);
