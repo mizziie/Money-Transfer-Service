@@ -2,6 +2,6 @@ package com.banking.mts.domain.enums;
 
 public enum AccountStatus {
     ACTIVE,
-    INACTIVE,
+    FROZEN,
     CLOSED
 }

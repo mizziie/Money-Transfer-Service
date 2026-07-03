@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -139,7 +140,7 @@ public class AccountService {
                 .accountId(account.getId())
                 .balance(account.getBalance())
                 .currency(account.getCurrency())
-                .asOf(LocalDateTime.now())
+                .asOf(Instant.now())
                 .build();
     }
 

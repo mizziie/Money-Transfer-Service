@@ -3,7 +3,7 @@ package com.banking.mts.dto;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -14,5 +14,5 @@ public class BalanceResponse {
     private Long accountId;
     private BigDecimal balance;
     private String currency;
-    private LocalDateTime asOf;
+    private Instant asOf;
 }
