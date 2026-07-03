@@ -1,0 +1,11 @@
+spring:
+  jms:
+    listener:
+      auto-startup: false
+  task:
+    scheduling:
+      enabled: false
+
+ibm:
+  mq:
+    connName: localhost(1)
